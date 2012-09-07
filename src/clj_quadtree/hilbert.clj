@@ -1,6 +1,5 @@
-(ns
-    "taken from http://blog.notdot.net/2009/11/Damn-Cool-Algorithms-Spatial-indexing-with-Quadtrees-and-Hilbert-Curves"
-    clj-quadtree.hilbert)
+(ns clj-quadtree.hilbert
+    "taken from http://blog.notdot.net/2009/11/Damn-Cool-Algorithms-Spatial-indexing-with-Quadtrees-and-Hilbert-Curves")
 
 (def ^:private hilbert-map
   {:a {'(0 0) '(0 :d) '(0 1) '(1 :a) '(1 0) '(3 :b) '(1 1) '(2 :a)}
