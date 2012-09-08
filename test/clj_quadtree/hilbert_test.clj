@@ -7,3 +7,9 @@
 
 (fact
  (hilbert-plane 1) => '([0 0] [0 1] [1 1] [1 0]))
+
+(fact
+ (let [d 8
+       n (bit-shift-left 1 d)]
+   (sort (for [x (range n)
+               y (range n)] (xy->hilbert x y d))) => (range (* n n))))

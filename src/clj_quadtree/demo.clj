@@ -1,7 +1,9 @@
 (ns clj-quadtree.demo
-  (import com.vividsolutions.jts.awt.ShapeWriter))
+  (import com.vividsolutions.jts.awt.ShapeWriter)
+  (:use clj-quadtree.core)
+  (:require [cljts.geom :as g]))
 
-(defn draw [w h shape]
+(defn draw [w h & shapes]
   (let [shape-writer (ShapeWriter.)]
     (doto (javax.swing.JFrame. "demo")
       (.setContentPane
@@ -11,7 +13,14 @@
                                (.scale 10 10)
                                (.translate 1.5 1.5)
                                (.setStroke (java.awt.BasicStroke. 0.4)))]
-                   (.draw g (.toShape shape-writer shape)))))
+                   (doseq [shape shapes]
+                     (.draw g (.toShape shape-writer shape))))))
          (.setPreferredSize (java.awt.Dimension. w h))))
       .pack
       (.setVisible true))))
+
+(defn draw-search [depth w h s]
+  (let [result (search-quads depth w h s)
+        line (g/line-string
+              (flatten (map #(-> % shape g/centroid g/coordinates) result)))]
+    (apply draw 800 800 s line (map shape result))))
