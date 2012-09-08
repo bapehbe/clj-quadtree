@@ -3,7 +3,7 @@
         midje.sweet))
 
 (fact
- (let [root (#'clj-quadtree.core/create-root 1000 1500)
+ (let [root (#'clj-quadtree.core/create-root 4)
        lvl1 (#'clj-quadtree.core/create-children root)
        lvl2 (flatten (map #(#'clj-quadtree.core/create-children %) lvl1))]
    (map id lvl1) => '(0 1 2 3)

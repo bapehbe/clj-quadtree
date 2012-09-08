@@ -15,8 +15,9 @@
         (assoc :shape (geom/quad->shape data))
         (assoc :id (xy->hilbert norm-x norm-y level)))))
 
-(defn- create-root [w h]
-  (create-node 0 0 0 w h))
+(defn- create-root [depth]
+  (let [side (bit-shift-left 1 depth)]
+    (create-node 0 0 0 side side)))
 
 (defn id [node]
   (:id node))
@@ -36,10 +37,13 @@
 (defn shape [node]
   (:shape node))
 
+(defn- halve [n]
+  (bit-shift-right n 1))
+
 (defn- create-children [node]
   (let [nlvl (-> node level inc)
-        nw (-> node width (/ 2))
-        nh (-> node height (/ 2))
+        nw (halve (width node))
+        nh (halve (height node))
         [x y] (coords node)
         nwest (create-node nlvl x y nw nh)
         neast (create-node nlvl (+ x nw) y nw nh)
@@ -47,8 +51,8 @@
         seast (create-node nlvl (+ x nw) (+ y nh) nw nh)]
     (sort-by :id [nwest neast swest seast])))
 
-(defn search-quads [depth w h s]
-  (let [root (create-node 0 0 0 w h)]
+(defn search-quads [depth s]
+  (let [root (create-root depth)]
     (loop [quads (create-children root)
            lvl 1]
       (let [candidates (filter #(rel/intersects? s (shape %)) quads)]
@@ -57,5 +61,5 @@
           (let [candidates (flatten (map create-children candidates))]
             (recur candidates (inc lvl))))))))
 
-(defn search-ids [depth w h s]
-  (map id (search-quads depth w h s)))
+(defn search-ids [depth s]
+  (map id (search-quads depth s)))
