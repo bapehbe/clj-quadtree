@@ -1,7 +1,5 @@
 (ns clj-quadtree.core
-  (:require [clojure.core.reducers :as r]
-            [clj-quadtree.geom :as geom]
-            [clojure.zip :as zip]
+  (:require [clj-quadtree.geom :as geom]
             [cljts.relation :as rel])
   (:use [clj-quadtree.hilbert]))
 
