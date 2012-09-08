@@ -10,10 +10,15 @@
                :x x
                :y y
                :width w
-               :height h}]
+               :height h}
+        norm-x (/ x w)
+        norm-y (/ y h)]
     (-> data
         (assoc :shape (geom/quad->shape data))
-        (assoc :id (xy->hilbert x y level)))))
+        (assoc :id (xy->hilbert norm-x norm-y level)))))
+
+(defn- create-root [w h]
+  (create-node 0 0 0 w h))
 
 (defn id [node]
   (:id node))
@@ -48,14 +53,8 @@
   (let [root (create-node 0 0 0 w h)]
     (loop [quads (create-children root)
            lvl 1]
-      (println id)
       (let [candidates (filter #(rel/intersects? s (shape %)) quads)]
-        (println (map id candidates))
         (if (= lvl depth)
-          ;; (apply sorted-set-by
-          ;;        (fn [a b]
-          ;;          (compare (id a) (id b)))
-          ;;        candidates)
           candidates
           (let [candidates (flatten (map create-children candidates))]
             (recur candidates (inc lvl))))))))
