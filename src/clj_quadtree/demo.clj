@@ -19,8 +19,8 @@
       .pack
       (.setVisible true))))
 
-(defn draw-search [depth w h s]
-  (let [result (search-quads depth w h s)
+(defn draw-search [depth s]
+  (let [result (search-quads depth s)
         line (g/line-string
               (flatten (map #(-> % shape g/centroid g/coordinates) result)))]
     (apply draw 800 800 s line (map shape result))))

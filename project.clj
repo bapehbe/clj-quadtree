@@ -5,6 +5,7 @@
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/clojure "1.4.0"]
                  [cljts "0.1.0"]
-                 [midje "1.4.0"]]
+                 [midje "1.4.0"]
+                 [criterium "0.3.0"]]
   ;; :jvm-opts ["-Xmx16g"]
   )
