@@ -2,7 +2,7 @@
   (:require [clj-quadtree.geom :as geom]
             [cljts.relation :as rel])
   (:use clj-quadtree.hilbert
-        [clojure.core.memoize]))
+        clojure.core.memoize))
 
 (def ^:dynamic *cache-method* memo-lru)
 (def ^:dynamic *cache-size* 10000)
@@ -61,7 +61,7 @@
   (let [root (create-root depth)]
     (loop [quads (create-children root)
            lvl 1]
-      (let [candidates (filter #(rel/intersects? s (shape %)) quads)]
+      (let [candidates (filter #(rel/intersects? (shape %) s) quads)]
         (if (= lvl depth)
           candidates
           (let [candidates (flatten (map create-children candidates))]
