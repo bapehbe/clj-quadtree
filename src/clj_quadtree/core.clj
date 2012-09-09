@@ -7,7 +7,7 @@
 (def ^:dynamic *cache-method* memo-lru)
 (def ^:dynamic *cache-size* 10000)
 
-(defn- create-node [level x y side]
+(defn- create-node [^long level ^long x ^long y ^long side]
   (let [data  {:level level
                :x x
                :y y
@@ -20,7 +20,7 @@
 
 (def ^:private memo-create-node (*cache-method* create-node *cache-size*))
 
-(defn- create-root [depth]
+(defn- create-root [^long depth]
   (let [side (bit-shift-left 1 depth)]
     (memo-create-node 0 0 0 side)))
 
@@ -49,7 +49,7 @@
         seast (memo-create-node nlvl (+ x ns) (+ y ns) ns)]
     (sort-by :id [nwest neast swest seast])))
 
-(defn search-quads [depth s]
+(defn search-quads [^long depth s]
   (let [root (create-root depth)]
     (loop [quads (create-children root)
            lvl 1]
@@ -59,5 +59,5 @@
           (let [candidates (flatten (map create-children candidates))]
             (recur candidates (inc lvl))))))))
 
-(defn search-ids [depth s]
+(defn search-ids [^long depth s]
   (map id (search-quads depth s)))
