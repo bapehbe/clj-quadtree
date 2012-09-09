@@ -24,3 +24,7 @@
         line (g/line-string
               (flatten (map #(-> % shape g/centroid g/coordinates) result)))]
     (apply draw 800 800 s line (map shape result))))
+
+;; (require '[cljts.analysis :as a])
+;; (def c1 (a/buffer (g/point (g/c 43 46)) 18))
+;; (draw-search 12 c1)

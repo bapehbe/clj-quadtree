@@ -1,7 +1,11 @@
 (ns clj-quadtree.core
   (:require [clj-quadtree.geom :as geom]
             [cljts.relation :as rel])
-  (:use [clj-quadtree.hilbert]))
+  (:use clj-quadtree.hilbert
+        [clojure.core.memoize]))
+
+(def ^:dynamic *cache-method* memo-lru)
+(def ^:dynamic *cache-size* 10000)
 
 (defn- create-node [level x y w h]
   (let [data  {:level level
@@ -15,9 +19,11 @@
         (assoc :shape (geom/quad->shape data))
         (assoc :id (xy->hilbert norm-x norm-y level)))))
 
+(def ^:private memo-create-node (*cache-method* create-node *cache-size*))
+
 (defn- create-root [depth]
   (let [side (bit-shift-left 1 depth)]
-    (create-node 0 0 0 side side)))
+    (memo-create-node 0 0 0 side side)))
 
 (defn id [node]
   (:id node))
@@ -45,10 +51,10 @@
         nw (halve (width node))
         nh (halve (height node))
         [x y] (coords node)
-        nwest (create-node nlvl x y nw nh)
-        neast (create-node nlvl (+ x nw) y nw nh)
-        swest (create-node nlvl x (+ y nh) nw nh)
-        seast (create-node nlvl (+ x nw) (+ y nh) nw nh)]
+        nwest (memo-create-node nlvl x y nw nh)
+        neast (memo-create-node nlvl (+ x nw) y nw nh)
+        swest (memo-create-node nlvl x (+ y nh) nw nh)
+        seast (memo-create-node nlvl (+ x nw) (+ y nh) nw nh)]
     (sort-by :id [nwest neast swest seast])))
 
 (defn search-quads [depth s]
