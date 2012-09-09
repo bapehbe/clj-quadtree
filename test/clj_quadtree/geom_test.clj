@@ -4,9 +4,9 @@
         [cljts.geom :only [c linear-ring polygon]]))
 
 (fact
- (quad->shape {:x 0 :y 0 :width 10 :height 10}) =>
+ (quad->shape {:x 0 :y 0 :side 10}) =>
  (polygon (linear-ring [(c 0 0)
-                        (c 10 0)
-                        (c 10 10)
-                        (c 0 10)
-                        (c 0 0)]) nil))
+                                 (c 10 0)
+                                 (c 10 10)
+                                 (c 0 10)
+                                 (c 0 0)]) nil))
