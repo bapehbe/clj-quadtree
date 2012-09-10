@@ -4,10 +4,19 @@
   (:use clj-quadtree.hilbert
         [clojure.core.memoize]))
 
-(def ^:dynamic *cache-method* memo-lru)
-(def ^:dynamic *cache-size* 10000)
+;; (def default-config {:cache-method memo-lru
+;;                      :cache-size* 10000})
+(def default-config {:cache-method memo
+                     :cache-size* nil})
 
-(defn- create-node [^long level ^long x ^long y ^long side]
+(defn- create-root [^long depth]
+  (let [side (bit-shift-left 1 depth)]
+    {:level 0
+     :x 0
+     :y 0
+     :side side}))
+
+(defn- create-node* [^long level ^long x ^long y ^long side]
   (let [data  {:level level
                :x x
                :y y
@@ -17,12 +26,6 @@
     (-> data
         (assoc :shape (geom/quad->shape data))
         (assoc :id (xy->hilbert norm-x norm-y level)))))
-
-(def ^:private memo-create-node (*cache-method* create-node *cache-size*))
-
-(defn- create-root [^long depth]
-  (let [side (bit-shift-left 1 depth)]
-    (memo-create-node 0 0 0 side)))
 
 (defn id [node]
   (:id node))
@@ -39,25 +42,36 @@
 (defn shape [node]
   (:shape node))
 
-(defn- create-children [node]
+(defn- create-children [create-node-fn node]
   (let [nlvl (-> node level inc)
         ns (bit-shift-right (side node) 1)
         [x y] (coords node)
-        nwest (memo-create-node nlvl x y ns)
-        neast (memo-create-node nlvl (+ x ns) y ns)
-        swest (memo-create-node nlvl x (+ y ns) ns)
-        seast (memo-create-node nlvl (+ x ns) (+ y ns) ns)]
+        nwest (create-node-fn nlvl x y ns)
+        neast (create-node-fn nlvl (+ x ns) y ns)
+        swest (create-node-fn nlvl x (+ y ns) ns)
+        seast (create-node-fn nlvl (+ x ns) (+ y ns) ns)]
     (sort-by :id [nwest neast swest seast])))
 
-(defn search-quads [^long depth s]
+(defn- search-quads* [create-node-fn ^long depth s]
   (let [root (create-root depth)]
-    (loop [quads (create-children root)
+    (loop [quads (create-children create-node-fn root)
            lvl 1]
       (let [candidates (filter #(rel/intersects? s (shape %)) quads)]
         (if (= lvl depth)
           candidates
-          (let [candidates (flatten (map create-children candidates))]
+          (let [candidates (flatten
+                            (map
+                             (partial create-children create-node-fn) candidates))]
             (recur candidates (inc lvl))))))))
 
-(defn search-ids [^long depth s]
-  (map id (search-quads depth s)))
+(defn- memoize-fn [fn cache-method cache-size]
+  (if (nil? cache-size)
+    (cache-method fn)
+    (cache-method fn cache-size)))
+
+(defn create-search-fn [{:keys [cache-method cache-size depth]}]
+  (let [create-node-fn (memoize-fn create-node* cache-method cache-size)]
+    (partial search-quads* create-node-fn)))
+
+(def search-quads
+  (create-search-fn default-config))
