@@ -1,6 +1,7 @@
 (ns clj-quadtree.core
   (:require [clj-quadtree.geom :as geom]
-            [cljts.relation :as rel])
+            [cljts.relation :as rel]
+            [clojure.core.reducers :as r])
   (:use clj-quadtree.hilbert
         [clojure.core.memoize]))
 
@@ -56,11 +57,11 @@
   (let [root (create-root depth)]
     (loop [quads (create-children create-node-fn root)
            lvl 1]
-      (let [candidates (filter #(rel/intersects? s (shape %)) quads)]
+      (let [candidates (r/filter #(rel/intersects? s (shape %)) quads)]
         (if (= lvl depth)
-          candidates
-          (let [candidates (flatten
-                            (map
+          (reduce conj '[] candidates)
+          (let [candidates (r/flatten
+                            (r/map
                              (partial create-children create-node-fn) candidates))]
             (recur candidates (inc lvl))))))))
 
