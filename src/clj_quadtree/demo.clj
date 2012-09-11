@@ -19,12 +19,11 @@
       .pack
       (.setVisible true))))
 
-(defn draw-search [depth s]
-  (let [result (search-quads depth s)
-        line (g/line-string
-              (flatten (map #(-> % shape g/centroid g/coordinates) result)))]
-    (apply draw 800 800 s line (map shape result))))
+(defn ids-line
+  "generates a line shape which connects centers of quads in the order of their ids"
+  [qs]
+  (g/line-string (flatten (map #(-> % shape g/centroid g/coordinates) qs))))
 
 ;; (require '[cljts.analysis :as a])
 ;; (def c1 (a/buffer (g/point (g/c 43 46)) 18))
-;; (draw-search 12 c1)
+;; (draw-quads (search-quads c1))

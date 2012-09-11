@@ -8,10 +8,12 @@
 ;; (def default-config {:cache-method memo-lru
 ;;                      :cache-size* 10000})
 (def default-config {:cache-method memo
-                     :cache-size* nil})
+                     :cache-size* nil
+                     :depth 16
+                     :tile-size 64})
 
-(defn- create-root [^long depth]
-  (let [side (bit-shift-left 1 depth)]
+(defn- create-root [^long depth ^long tile-size]
+  (let [side (* tile-size (bit-shift-left 1 depth))]
     {:level 0
      :x 0
      :y 0
@@ -53,8 +55,8 @@
         seast (create-node-fn nlvl (+ x ns) (+ y ns) ns)]
     (sort-by :id [nwest neast swest seast])))
 
-(defn- search-quads* [create-node-fn ^long depth s]
-  (let [root (create-root depth)]
+(defn- search-quads* [create-node-fn ^long depth ^long tile-size s]
+  (let [root (create-root depth tile-size)]
     (loop [quads (create-children create-node-fn root)
            lvl 1]
       (let [candidates (r/filter #(rel/intersects? s (shape %)) quads)]
@@ -70,9 +72,9 @@
     (cache-method fn)
     (cache-method fn cache-size)))
 
-(defn create-search-fn [{:keys [cache-method cache-size depth]}]
+(defn create-search-fn [{:keys [cache-method cache-size depth tile-size]}]
   (let [create-node-fn (memoize-fn create-node* cache-method cache-size)]
-    (partial search-quads* create-node-fn)))
+    (partial search-quads* create-node-fn depth tile-size)))
 
 (def search-quads
   (create-search-fn default-config))
