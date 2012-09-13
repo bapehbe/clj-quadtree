@@ -9,15 +9,14 @@
 ;;                      :cache-size* 10000})
 (def default-config {:cache-method memo
                      :cache-size* nil
-                     :depth 16
+                     :depth 15
                      :tile-size 64})
 
 (defn- create-root [^long depth ^long tile-size]
-  (let [side (* tile-size (bit-shift-left 1 depth))]
     {:level 0
      :x 0
      :y 0
-     :side side}))
+     :side (geom/quadtree-side depth tile-size)})
 
 (defn- create-node* [^long level ^long x ^long y ^long side]
   (let [data  {:level level

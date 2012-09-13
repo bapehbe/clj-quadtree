@@ -1,8 +1,10 @@
 (ns clj-quadtree.geom
-  (:use [cljts.geom :only [c linear-ring polygon]])
-  (:import [com.vividsolutions.jts.geom.util
-            AffineTransformation AffineTransformationBuilder]
-           [com.vividsolutions.jts.geom Coordinate Geometry]))
+  (:use [cljts.geom :only [c linear-ring polygon]]
+        [cljts.transform :only [transformation inverse-transformation]])
+  (:import [com.vividsolutions.jts.geom Coordinate Geometry]))
+
+(defn quadtree-side [^long depth ^long tile-size]
+  (* tile-size (bit-shift-left 1 depth)))
 
 (defn quad->shape [{:keys [x y side]}]
   (polygon (linear-ring (let [x1 (+ x side)
@@ -13,35 +15,18 @@
                               sw (c x y1)]
                           [nw ne se sw nw])) nil))
 
-(defn- create-builder [c1 c2 c3 c4 c5 c6]
-  (com.vividsolutions.jts.geom.util.AffineTransformationBuilder. c1 c2 c3 c4 c5 c6))
 
-(defn- create-transformation [coordinates]
-  (let [builder (apply create-builder (map #(apply c %) (partition 2 coordinates)))]
-    (.getTransformation builder)))
+(defn control-vectors [depth tile-size upper-left lower-left upper-right]
+  (let [side (quadtree-side depth tile-size)]
+    [(c 0 0) (c 0 side) (c side 0)
+     upper-left lower-left upper-right]))
 
-(defprotocol Transformable
-  (transform [this transformation]))
+(defn from-binary-transform [depth tile-size upper-left lower-left upper-right]
+  "creates a function for transforming coordinates from the quadtree coordinate
+system to your coordinate system. You will need to provide the quadtree depth and tile size as well as coordinates of three corners of your coordinate system"
+  (transformation
+   (control-vectors depth tile-size upper-left lower-left upper-right)))
 
-(extend-type Coordinate
-  Transformable
-  (transform [this transformation]
-    (.transform transformation this (Coordinate.))))
-
-(extend-type Geometry
-  Transformable
-  (transform [this transformation]
-    (.transform transformation this)))
-
-(defn- transformation-fn [tr]
-  (fn [this]
-      (transform this tr)))
-
-(defn transformation [coordinates]
-  (transformation-fn (create-transformation coordinates)))
-
-(defn inverse-transformation [coordinates]
-  (transformation-fn (.getInverse (create-transformation coordinates))))
-
-(defn identity-transformation []
-  (transformation-fn (.setToIdentity (AffineTransformation.))))
+(defn to-binary-transform [depth tile-size upper-left lower-left upper-right]
+  (inverse-transformation
+   (control-vectors depth tile-size upper-left lower-left upper-right)))

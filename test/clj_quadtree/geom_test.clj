@@ -1,7 +1,7 @@
 (ns clj-quadtree.geom-test
   (:use clj-quadtree.geom
         midje.sweet
-        [cljts.geom :only [c point linear-ring polygon]]))
+        [cljts.geom :only [c linear-ring polygon]]))
 
 (fact
  (quad->shape {:x 0 :y 0 :side 10}) =>
@@ -12,56 +12,23 @@
                                  (c 0 0)]) nil))
 
 (fact
- (let [rotation 
-       (transformation '(0 0    1 0    0 1
-                         0 0    0 1   -1 0))]
-   (rotation (c 0 0)) => (c 0 0)
-   (rotation (c 1 0)) => (c 0 1)
-   (rotation (c 0 1)) => (c -1 0)))
+ (let [quad->mercator
+       (from-binary-transform 15 64
+                              (c -20037508.342789244 20037508.342789244)
+                              (c -20037508.342789244 -20037508.342789244)
+                              (c 20037508.342789244 20037508.342789244))
+       quad-coordinate (c 1267712 655616)
+       mercator-coordinate (quad->mercator quad-coordinate)]
+   (.x mercator-coordinate) => (roughly 4187526.157575097)
+   (.y mercator-coordinate) => (roughly 7509173.658735715)))
 
 (fact
- (let [rotation 
-       (transformation '(0 0    1 0    0 1
-                         0 0    1 1   -1 1))]
-   (rotation (point (c 0 0))) => (point (c 0 0))
-   (rotation (point (c 1 0))) => (point (c 1 1))
-   (rotation (point (c 0 1))) => (point (c -1 1))))   
-
-(fact
- (let [scale 
-       (transformation '(0 0    1 0    0 1
-                         0 0    2 1    0 2))]
-   (scale (c 0 0)) => (c 0 0)
-   (scale (c 1 0)) => (c 2 1)
-   (scale (c 0 1)) => (c 0 2)))
-
-(fact
- (let [translate 
-       (transformation '(0 0    1 0    0 1
-                         5 6    6 6    5 7))]
-   (translate (c 0 0)) => (c 5 6)
-   (translate (c 1 0)) => (c 6 6)
-   (translate (c 0 1)) => (c 5 7)))
-
-(fact
- (let [linear 
-       (transformation '(0 0    1 0    0 1
-                         0 0    0 0    5 7))]
-   (linear (c 0 0)) => (c 0 0)
-   (linear (c 1 0)) => (c 0 0)
-   (linear (c 0 1)) => (c 5 7)))
-
-(fact
- (let [inverse 
-       (inverse-transformation '(0 0    1 0    0 1
-                                 0 0    2 1    0 2))]
-   (inverse (c 0 0)) => (c 0 0)
-   (inverse (c 2 1)) => (c 1 0)
-   (inverse (c 0 2)) => (c 0 1)))
-
-(fact
- (let [identity (identity-transformation)
-       coord (c (rand) (rand))]
-   (identity coord) => coord))
-
-
+ (let [mercator->quad
+       (to-binary-transform 15 64
+                              (c -20037508.342789244 20037508.342789244)
+                              (c -20037508.342789244 -20037508.342789244)
+                              (c 20037508.342789244 20037508.342789244))
+       mercator-coordinate (c 4187594.340763207 7509144.10858847)
+       quad-coordinate (mercator->quad mercator-coordinate)]
+   (.x quad-coordinate) => (roughly 1267715.568071111)
+   (.y quad-coordinate) => (roughly 655617.5463786547)))
