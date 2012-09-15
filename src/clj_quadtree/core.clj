@@ -1,6 +1,7 @@
 (ns clj-quadtree.core
   (:require [clj-quadtree.geom :as geom]
             [cljts.relation :as rel]
+            [cljts.prep :as prep]
             [clojure.core.reducers :as r])
   (:use clj-quadtree.hilbert
         [clojure.core.memoize]))
@@ -55,16 +56,22 @@
     (sort-by :id [nwest neast swest seast])))
 
 (defn- search-quads* [create-node-fn ^long depth ^long tile-size s]
-  (let [root (create-root depth tile-size)]
+  (let [ps (prep/prepare s)
+        root (create-root depth tile-size)]
     (loop [quads (create-children create-node-fn root)
+           result []
            lvl 1]
-      (let [candidates (r/filter #(rel/intersects? s (shape %)) quads)]
+      (let [candidates (r/filter #(rel/intersects? ps (shape %)) quads)]
         (if (= lvl depth)
-          (reduce conj '[] candidates)
-          (let [candidates (r/flatten
+          (into result candidates)
+          (let [{covered true touched false}
+                (group-by #(rel/covers? ps (shape %)) candidates)
+                candidates (r/flatten
                             (r/map
-                             (partial create-children create-node-fn) candidates))]
-            (recur candidates (inc lvl))))))))
+                             (partial create-children create-node-fn) touched))]
+            ;; don't need to check the covered anymore but touched can
+            ;; be subdivided
+            (recur candidates (into result covered) (inc lvl))))))))
 
 (defn- memoize-fn [fn cache-method cache-size]
   (if (nil? cache-size)
