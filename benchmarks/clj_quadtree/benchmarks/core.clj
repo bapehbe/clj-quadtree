@@ -11,8 +11,14 @@
                                :depth 12
                                :tile-size 1}))
 
+(def no-cache-search (create-search-fn {:cache-method identity
+                               :depth 12
+                               :tile-size 1}))
 (defcase search-goal :point []
   (search p1))
 
 (defcase search-goal :circle []
   (search c1))
+
+(defcase search-goal :no-cache []
+  (no-cache-search c1))
