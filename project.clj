@@ -6,7 +6,7 @@
   :dependencies [[org.clojure/clojure "1.5.0-alpha4"]
                  [cljts "0.2.0-SNAPSHOT"]
                  [midje "1.4.0"]
-                 [criterium "0.3.0"]
+                 [perforate "0.2.3"]
                  [org.clojure/core.memoize "0.5.2"]]
-  ;; :jvm-opts ["-Xmx16g"]
-  )
+  :profiles {:dev {:plugins [[lein-midje "2.0.0-SNAPSHOT"]
+                             [perforate "0.2.3"]]}})
