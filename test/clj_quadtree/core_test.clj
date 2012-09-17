@@ -42,3 +42,11 @@
        c1 (a/buffer (g/point (g/c 3 3)) 2)
        result (search c1)]
    (count result) => 4))
+
+(fact
+ (let [p1 (g/point (g/c 443 426))
+       c1 (a/buffer p1 341)
+       search (create-search-fn {:cache-method clojure.core.memoize/memo
+                               :depth 15
+                                 :tile-size 64})]
+   (map id (search c1)) => '(2 6 12 28 30 31 32 53 54 9 10 11 17 18 22 23 28 29 30 31 52 53 54 55 56 57 61 62 66 67 68 69 70 71 72 73 74 97 110 111 116 117 118 119 132 133 134 135 136 139 140 141 142 143 144 208 209 210 211 220 221 222 223 224 226 227 228 229 230 231 233)))
