@@ -55,9 +55,8 @@
         seast (create-node-fn nlvl (+ x ns) (+ y ns) ns)]
     (sort-by :id [nwest neast swest seast])))
 
-(defn- search-quads* [create-node-fn ^long depth ^long tile-size s]
-  (let [ps (prep/prepare s)
-        root (create-root depth tile-size)]
+(defn- search-quads* [create-node-fn ^long depth root s]
+  (let [ps (prep/prepare s) ]
     (loop [quads (create-children create-node-fn root)
            result []
            lvl 1]
@@ -79,8 +78,9 @@
     (cache-method fn cache-size)))
 
 (defn create-search-fn [{:keys [cache-method cache-size depth tile-size]}]
-  (let [create-node-fn (memoize-fn create-node* cache-method cache-size)]
-    (partial search-quads* create-node-fn depth tile-size)))
+  (let [root (create-root depth tile-size)
+        create-node-fn (memoize-fn create-node* cache-method cache-size)]
+    (partial search-quads* create-node-fn depth root)))
 
 (def search-quads
   (create-search-fn default-config))
