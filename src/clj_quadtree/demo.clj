@@ -1,30 +1,32 @@
 (ns clj-quadtree.demo
   (import com.vividsolutions.jts.awt.ShapeWriter
           [com.vividsolutions.jts.geom Geometry Polygon])
-  (:use clj-quadtree.core)
-  (:require [cljts.geom :as g]))
+  (:use clj-quadtree.core
+        clj-quadtree.geom)
+  (:require [cljts.geom :as g]
+            [cljts.analysis :as a]))
 
 (defn apply-attributes [g options]
-  (when-not (nil? options)
+  (when options
     (let [paint (:paint options)
           font (:font options)
           stroke (:stroke options)
           transform (:transform options)
           composite (:composite options)
           clip (:clip options)]
-      (when paint (fn [paint] (.setPaint g paint)))
-      (when font (fn [font] (.setFont g font)))
-      (when stroke (fn [stroke] (.setStroke g stroke)))
-      (when transform (fn [transform] (.setTransform g transform)))
-      (when composite (fn [composite] (.setComposite g composite)))
-      (when clip (fn [clip] (.setClip g clip))))))
+      (when paint (.setPaint g paint))
+      (when font (.setFont g font))
+      (when stroke (.setStroke g stroke))
+      (when transform (.setTransform g transform))
+      (when composite (.setComposite g composite))
+      (when clip (.setClip g clip)))))
 
 (defprotocol Drawable
   (draw [this g options]))
 
 (extend-type java.awt.Shape
   Drawable
-  (draw [this g options]
+  (draw [this g _]
     (.draw g this)))
 
 (extend-type String
@@ -34,8 +36,13 @@
 
 (def ^:private shape-writer (ShapeWriter.))
 
-(defn drawable [shape]
+(defn- drawable [shape]
   (.toShape shape-writer shape))
+
+(extend-type Geometry
+  Drawable
+  (draw [this g options]
+    (draw (drawable this) g options)))
 
 (defn stack-trace [e]
   (let [sw (java.io.StringWriter.)
@@ -92,15 +99,24 @@
   [qs]
   (g/line-string (flatten (map #(-> % shape g/centroid g/coordinates) qs))))
 
-;; (require '[cljts.analysis :as a])
-;; (let [p1 (g/point (g/c 443 426))
-;;       c1 (a/buffer p1 341)
-;;       search (create-search-fn {:cache-method clojure.core.memoize/memo
-;;                                 :depth 15
-;;                                 :tile-size 64})
-;;       result (search c1)
-;;       c1-draw [(drawable c1) {:paint java.awt.Color/RED}]
-;;       quads-draw (map #(vector (-> % shape drawable) {:stroke (java.awt.BasicStroke. 1.0)}) result)
-;;       labels-draw (map quad->label result)]
-;;   (apply show 800 800 (conj (into quads-draw labels-draw) c1-draw)))
-  
+(def demo-config {:cache-method clojure.core.memoize/memo
+                  :depth 15
+                  :tile-size 64})
+
+(defn run-demo []
+  (let [w 896
+        h 896
+        {:keys [depth tile-size]} demo-config
+        tiles (sort-by id (for [x (range 0 w tile-size) y (range 0 w tile-size)]
+                            (#'clj-quadtree.core/create-node* depth x y tile-size)))
+        hb-lines (g/line-string (map #(-> % shape g/centroid g/coordinates first) tiles))
+        hb-lines-draw (vector hb-lines {:paint java.awt.Color/BLUE})
+        labels-draw (map quad->label tiles)
+        p1 (g/point (g/c 443 426))
+        c1 (a/buffer p1 341)
+        search (create-search-fn demo-config)
+        result (search c1)
+        c1-draw [c1 {:paint java.awt.Color/RED}]
+        quads-draw (map #(vector (shape %) {:stroke (java.awt.BasicStroke. 2.0)}) result)
+        to-draw (-> quads-draw (conj c1-draw) (into labels-draw) (conj hb-lines-draw))]
+    (apply show w h to-draw)))
