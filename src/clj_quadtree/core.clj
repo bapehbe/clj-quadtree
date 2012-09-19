@@ -82,5 +82,50 @@
         create-node-fn (memoize-fn create-node* cache-method cache-size)]
     (partial search-quads* create-node-fn depth root)))
 
-(def search-quads
+(def search
   (create-search-fn default-config))
+
+(defn- children-tile-ids* [parent depth tile-size]
+  (let [[px py] (coords parent)
+        pside (side parent)
+        max-x (+ px pside)
+        max-y (+ py pside)
+        npx (quot px tile-size)
+        npy (quot py tile-size)
+        nmx (quot max-x tile-size)
+        nmy (quot max-y tile-size)]
+    (for [nx (range npx nmx)
+          ny (range npy nmy)]
+      (xy->hilbert nx ny depth))))
+
+(defn make-ranges [ids]
+  (loop [start (first ids)
+         others (rest ids)
+         prev start
+         result []
+         new-range false]
+    (let [cur (first others)]
+      (if (empty? others)
+        (if (or new-range (= start prev))
+          (conj result prev)
+          (conj result [start prev]))
+        (if (= 1 (- cur prev))
+          (recur start (rest others) cur result false)
+          (recur (first others) (rest others) cur
+                 (conj result
+                       (if (= start prev)
+                         prev
+                         [start prev])) true))))))
+
+(defn- tile-ids [{:keys [depth tile-size]} children-tile-ids-fn r]
+  (-> (map (fn [node]
+                  (if (< (level node) depth)
+                    (children-tile-ids-fn node depth tile-size)
+                    (id node))) r) flatten sort make-ranges))
+
+(defn create-search-ids-fn [{:keys [cache-method cache-size] :as config}]
+  (let [search-fn (create-search-fn config)
+        children-tile-ids-fn (memoize-fn children-tile-ids* cache-method cache-size)]
+    (comp (partial tile-ids config children-tile-ids-fn) search-fn)))
+
+(def find-ids (create-search-ids-fn default-config))
