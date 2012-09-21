@@ -3,10 +3,10 @@
         [cljts.transform :only [transformation inverse-transformation]])
   (:import [com.vividsolutions.jts.geom Coordinate Geometry]))
 
-(defn quadtree-side [^long depth ^long tile-size]
-  (* tile-size (bit-shift-left 1 depth)))
+(defn quadtree-side [^long depth ^long tile-size-p]
+  (bit-shift-left 1 (+ depth tile-size-p)))
 
-(defn quad->shape [{:keys [x y side]}]
+(defn quad->shape [x y side]
   (polygon (linear-ring (let [x1 (+ x side)
                               y1 (+ y side)
                               nw (c x y)
@@ -16,17 +16,17 @@
                           [nw ne se sw nw])) nil))
 
 
-(defn control-vectors [depth tile-size upper-left lower-left upper-right]
-  (let [side (quadtree-side depth tile-size)]
+(defn control-vectors [depth tile-size-p upper-left lower-left upper-right]
+  (let [side (quadtree-side depth tile-size-p)]
     [(c 0 0) (c 0 side) (c side 0)
      upper-left lower-left upper-right]))
 
-(defn from-binary-transform [depth tile-size upper-left lower-left upper-right]
+(defn from-binary-transform [depth tile-size-p upper-left lower-left upper-right]
   "creates a function for transforming coordinates from the quadtree coordinate
 system to your coordinate system. You will need to provide the quadtree depth and tile size as well as coordinates of three corners of your coordinate system"
   (transformation
-   (control-vectors depth tile-size upper-left lower-left upper-right)))
+   (control-vectors depth tile-size-p upper-left lower-left upper-right)))
 
-(defn to-binary-transform [depth tile-size upper-left lower-left upper-right]
+(defn to-binary-transform [depth tile-size-p upper-left lower-left upper-right]
   (inverse-transformation
-   (control-vectors depth tile-size upper-left lower-left upper-right)))
+   (control-vectors depth tile-size-p upper-left lower-left upper-right)))

@@ -101,14 +101,16 @@
 
 (def demo-config {:cache-method clojure.core.memoize/memo
                   :depth 15
-                  :tile-size 64})
+                  :tile-size-p 6})
 
 (defn run-demo []
   (let [w 896
         h 896
-        {:keys [depth tile-size]} demo-config
-        tiles (sort-by id (for [x (range 0 w tile-size) y (range 0 w tile-size)]
-                            (#'clj-quadtree.core/create-node* depth x y tile-size)))
+        {:keys [depth tile-size-p]} demo-config
+        tile-size (bit-shift-left 1 tile-size-p)
+        nside (/ w tile-size)
+        tiles (sort-by id (for [nx (range 0 nside) ny (range 0 nside)]
+                            (#'clj-quadtree.core/create-node* depth nx ny tile-size)))
         hb-lines (g/line-string (map #(-> % shape g/centroid g/coordinates first) tiles))
         hb-lines-draw (vector hb-lines {:paint java.awt.Color/BLUE})
         labels-draw (map quad->label tiles)

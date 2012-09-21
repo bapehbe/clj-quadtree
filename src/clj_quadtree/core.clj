@@ -11,24 +11,26 @@
 (def default-config {:cache-method memo
                      :cache-size* nil
                      :depth 15
-                     :tile-size 64})
+                     :tile-size-p 6})
 
-(defn- create-root [^long depth ^long tile-size]
-    {:level 0
-     :x 0
-     :y 0
-     :side (geom/quadtree-side depth tile-size)})
+(defn- create-root [^long depth ^long tile-size-p]
+  {:level 0
+   :nx 0
+   :ny 0
+   :side (geom/quadtree-side depth tile-size-p)})
 
-(defn- create-node* [^long level ^long x ^long y ^long side]
-  (let [data  {:level level
+(defn- create-node* [^long level ^long nx ^long ny ^long side]
+  (let [x (* side nx)
+        y (* side ny)
+        data  {:level level
+               :nx nx
+               :ny ny
                :x x
                :y y
-               :side side}
-        norm-x (quot x side)
-        norm-y (quot y side)]
+               :side side}]
     (-> data
-        (assoc :shape (geom/quad->shape data))
-        (assoc :id (xy->hilbert norm-x norm-y level)))))
+        (assoc :shape (geom/quad->shape x y side))
+        (assoc :id (xy->hilbert nx ny level)))))
 
 (defn id [node]
   (:id node))
@@ -42,61 +44,70 @@
 (defn coords [node]
   [(:x node) (:y node)])
 
+(defn norm-coords [node]
+  [(:nx node) (:ny node)])
+
 (defn shape [node]
   (:shape node))
 
-(defn- create-children [create-node-fn node]
-  (let [nlvl (-> node level inc)
-        ns (bit-shift-right (side node) 1)
-        [x y] (coords node)
-        nwest (create-node-fn nlvl x y ns)
-        neast (create-node-fn nlvl (+ x ns) y ns)
-        swest (create-node-fn nlvl x (+ y ns) ns)
-        seast (create-node-fn nlvl (+ x ns) (+ y ns) ns)]
+(defn- create-children [create-node-fn parent]
+  (let [clvl (-> parent level inc)
+        side (bit-shift-right (side parent) 1)
+        [pnx pny] (norm-coords parent)
+        cnx (bit-shift-left pnx 1)
+        cny (bit-shift-left pny 1)
+        nwest (create-node-fn clvl cnx cny side)
+        neast (create-node-fn clvl (inc cnx) cny side)
+        swest (create-node-fn clvl cnx (inc cny) side)
+        seast (create-node-fn clvl (inc cnx) (inc cny) side)]
     (sort-by :id [nwest neast swest seast])))
 
+(defn- children-tiles [create-node-fn depth parent]
+  (let [[npx npy] (norm-coords parent)
+        plvl (level parent)
+        pside (side parent)
+        pnside (bit-shift-left 1 (- depth plvl))
+        side (bit-shift-right pside (- depth plvl))
+        nsx (* npx pnside)
+        nsy (* npy pnside)
+        nmx (+ nsx pnside)
+        nmy (+ nsy pnside)]
+    (for [nx (range nsx nmx)
+          ny (range nsy nmy)]
+      (create-node-fn depth nx ny side))))
+
 (defn- search-quads* [create-node-fn ^long depth root s]
-  (let [ps (prep/prepare s) ]
+  (let [ps (prep/prepare s)]
     (loop [quads (create-children create-node-fn root)
-           result []
+           result (transient [])
            lvl 1]
       (let [candidates (r/filter #(rel/intersects? ps (shape %)) quads)]
         (if (= lvl depth)
-          (into result candidates)
+          (persistent! (reduce conj! result candidates))
           (let [{covered true touched false}
                 (group-by #(rel/covers? ps (shape %)) candidates)
                 candidates (r/flatten
                             (r/map
                              (partial create-children create-node-fn) touched))]
             ;; don't need to check the covered anymore but touched can
-            ;; be subdivided
-            (recur candidates (into result covered) (inc lvl))))))))
+            ;; be subdivided. Just need to split the covered into tiles
+            (recur candidates
+                   (reduce conj! result
+                           (r/flatten (r/map (partial children-tiles create-node-fn depth) covered)))
+                   (inc lvl))))))))
 
 (defn- memoize-fn [fn cache-method cache-size]
   (if (nil? cache-size)
     (cache-method fn)
     (cache-method fn cache-size)))
 
-(defn create-search-fn [{:keys [cache-method cache-size depth tile-size]}]
-  (let [root (create-root depth tile-size)
-        create-node-fn (memoize-fn create-node* cache-method cache-size)]
+(defn create-search-fn [{:keys [cache-method cache-size depth tile-size-p]}]
+  (let [create-node-fn (memoize-fn create-node* cache-method cache-size)
+        root (create-root depth tile-size-p)]
     (partial search-quads* create-node-fn depth root)))
 
 (def search
   (create-search-fn default-config))
-
-(defn- children-tile-ids* [parent depth tile-size]
-  (let [[px py] (coords parent)
-        pside (side parent)
-        max-x (+ px pside)
-        max-y (+ py pside)
-        npx (quot px tile-size)
-        npy (quot py tile-size)
-        nmx (quot max-x tile-size)
-        nmy (quot max-y tile-size)]
-    (for [nx (range npx nmx)
-          ny (range npy nmy)]
-      (xy->hilbert nx ny depth))))
 
 (defn make-ranges [ids]
   (loop [start (first ids)
@@ -117,15 +128,5 @@
                          prev
                          [start prev])) true))))))
 
-(defn- tile-ids [{:keys [depth tile-size]} children-tile-ids-fn r]
-  (-> (map (fn [node]
-                  (if (< (level node) depth)
-                    (children-tile-ids-fn node depth tile-size)
-                    (id node))) r) flatten sort make-ranges))
-
-(defn create-search-ids-fn [{:keys [cache-method cache-size] :as config}]
-  (let [search-fn (create-search-fn config)
-        children-tile-ids-fn (memoize-fn children-tile-ids* cache-method cache-size)]
-    (comp (partial tile-ids config children-tile-ids-fn) search-fn)))
-
-(def find-ids (create-search-ids-fn default-config))
+(defn tile-ids [r]
+  (make-ranges (sort (map id r))))

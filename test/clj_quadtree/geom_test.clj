@@ -4,7 +4,10 @@
         [cljts.geom :only [c linear-ring polygon]]))
 
 (fact
- (quad->shape {:x 0 :y 0 :side 10}) =>
+ (quadtree-side 15 6) => 2097152)
+
+(fact
+ (quad->shape 0 0 10) =>
  (polygon (linear-ring [(c 0 0)
                                  (c 10 0)
                                  (c 10 10)
@@ -13,7 +16,7 @@
 
 (fact
  (let [quad->mercator
-       (from-binary-transform 15 64
+       (from-binary-transform 15 6
                               (c -20037508.342789244 20037508.342789244)
                               (c -20037508.342789244 -20037508.342789244)
                               (c 20037508.342789244 20037508.342789244))
@@ -24,7 +27,7 @@
 
 (fact
  (let [mercator->quad
-       (to-binary-transform 15 64
+       (to-binary-transform 15 6
                               (c -20037508.342789244 20037508.342789244)
                               (c -20037508.342789244 -20037508.342789244)
                               (c 20037508.342789244 20037508.342789244))
