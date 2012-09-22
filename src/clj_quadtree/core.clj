@@ -96,7 +96,7 @@
         create-node-fn (memoize-fn create-node* cache-method cache-size)]
     (partial search-quads* create-node-fn depth root)))
 
-(def search
+(def default-search
   (create-search-fn default-config))
 
 (defn make-ranges [ids]
