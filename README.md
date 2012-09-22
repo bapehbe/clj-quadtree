@@ -1,7 +1,7 @@
 # clj-quadtree
 
 Library for spatial indexing and search using quadtrees.
-Check out [wiki](https://github.com/bapehbe/clj-quadtree/wiki) for
+Check out [wiki](https://github.com/bapehbe/clj-quadtree/wiki/IAQ) for
 detailed description.
 
 ## Usage
@@ -31,6 +31,11 @@ detailed description.
 ;; the result contains coordinates (like 97 above) or ranges of
 ;; coordinates. For example, [22 57] means all positive integers from
 ;; 22 to 57 inclusive
+
+;; See the search above in a picture which shows the tiles, the Hilbert
+;; curve and the circle
+(use 'clj-quadtree.demo)
+(run-demo)
 ```
 
 ## License
