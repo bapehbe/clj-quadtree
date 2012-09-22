@@ -37,7 +37,8 @@ detailed description.
 (use 'clj-quadtree.demo)
 (run-demo)
 ```
-
+... to get this
+![demo](https://github.com/bapehbe/clj-quadtree/blob/master/demo.png)
 ## License
 
 Use it any way you want to, just make sure you send me bug fixes and
