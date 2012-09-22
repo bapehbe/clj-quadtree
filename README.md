@@ -1,3 +1,5 @@
+[![Build Status](https://secure.travis-ci.org/bapehbe/clj-quadtree.png)](http://travis-ci.org/bapehbe/clj-quadtree)
+
 # clj-quadtree
 
 Library for spatial indexing and search using quadtrees.
