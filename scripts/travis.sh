@@ -1,3 +1,5 @@
 #!/bin/sh
 lein2 midje
-lein2 perforate
+if [ $? -eq 0 ];
+    then lein2 perforate;
+fi
