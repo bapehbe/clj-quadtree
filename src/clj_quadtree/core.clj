@@ -76,14 +76,13 @@
           (persistent! (reduce conj! result candidates))
           (let [{covered true touched false}
                 (group-by #(rel/covers? ps (shape %)) candidates)
-                candidates (r/flatten
-                            (r/map
-                             (partial create-children create-node-fn) touched))]
+                candidates (r/mapcat
+                             (partial create-children create-node-fn) touched)]
             ;; don't need to check the covered anymore but touched can
             ;; be subdivided. Just need to split the covered into tiles
             (recur candidates
                    (reduce conj! result
-                           (r/flatten (r/map (partial children-tiles create-node-fn depth) covered)))
+                           (r/mapcat (partial children-tiles create-node-fn depth) covered))
                    (inc lvl))))))))
 
 (defn- memoize-fn [fn cache-method cache-size]
