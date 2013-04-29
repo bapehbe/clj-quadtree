@@ -6,8 +6,7 @@
   :dependencies [[org.clojure/clojure "1.5.1"]
                  [cljts "0.2.0"]
                  [midje "1.4.0"]
-                 [perforate "0.2.3"]
-                 [org.clojure/core.memoize "0.5.2"]]
+                 [org.clojure/core.memoize "0.5.3"]]
   :profiles {:dev {:plugins [[lein-midje "2.0.0-SNAPSHOT"]
-                             [perforate "0.2.3"]]}}
+                             [perforate "0.3.2"]]}}
   :warn-on-reflection false)
