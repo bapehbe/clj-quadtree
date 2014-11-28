@@ -1,4 +1,4 @@
-(defproject clj-quadtree "0.1.0-SNAPSHOT"
+(defproject clj-quadtree "0.1.0"
   :description "spatial search using quadtree"
   :url "http://example.com/FIXME"
   :license {:name "Eclipse Public License"
