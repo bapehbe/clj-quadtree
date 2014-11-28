@@ -1,3 +1,5 @@
+[![Clojars Project](http://clojars.org/clj-quadtree/latest-version.svg)](http://clojars.org/clj-quadtree)
+
 [![Build Status](https://secure.travis-ci.org/bapehbe/clj-quadtree.png)](http://travis-ci.org/bapehbe/clj-quadtree)
 
 # clj-quadtree
